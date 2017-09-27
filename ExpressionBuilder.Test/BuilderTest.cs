@@ -293,5 +293,36 @@ namespace ExpressionBuilder.Test
             Assert.That(person.Count(), Is.EqualTo(1));
             Assert.That(person, Is.EquivalentTo(solution));
         }
+
+        [TestCase(TestName = "Builder using complex expressions (fluent interface)", Category = "ComplexExpressions")]
+        public void BuilderUsingComplexExpressionsFluentInterface()
+        {
+            var filter = new Filter<Person>();
+            filter.By("Birth.Country", Operation.EqualTo, "USA").And.By("Name", Operation.DoesNotContain, "doe")
+                .Or
+                .Group.By("Name", Operation.EndsWith, "Doe").And.By("Birth.Country", Operation.IsNullOrWhiteSpace);
+            var people = People.Where(filter);
+            var solution = People.Where(p => ((p.Birth != null && p.Birth.Country == "USA") && !p.Name.Contains("Doe"))
+                                || (p.Name.EndsWith("Doe") && (p.Birth != null && string.IsNullOrWhiteSpace(p.Birth.Country))));
+
+            Assert.That(people, Is.EquivalentTo(solution));
+        }
+
+        [TestCase(TestName = "Builder using complex expressions", Category = "ComplexExpressions")]
+        public void BuilderUsingComplexExpressions()
+        {
+            var filter = new Filter<Person>();
+            filter.StartGroup();
+            filter.By("Birth.Country", Operation.EqualTo, "USA", default(string), FilterStatementConnector.And);
+            filter.By("Name", Operation.DoesNotContain, "doe", default(string), FilterStatementConnector.Or);
+            filter.StartGroup();
+            filter.By("Name", Operation.EndsWith, "Doe", default(string), FilterStatementConnector.And);
+            filter.By("Birth.Country", Operation.IsNullOrWhiteSpace, default(string), default(string), FilterStatementConnector.And);
+            var people = People.Where(filter);
+            var solution = People.Where(p => ((p.Birth != null && p.Birth.Country == "USA") && !p.Name.Contains("Doe"))
+                                || (p.Name.EndsWith("Doe") && (p.Birth != null && string.IsNullOrWhiteSpace(p.Birth.Country))));
+
+            Assert.That(people, Is.EquivalentTo(solution));
+        }
     }
 }
